@@ -1,35 +1,6 @@
-import { createObjectCsvWriter } from "csv-writer";
+import { writeCsv } from "@/utils/write-csv";
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer-core";
-
-const writeCsv = (filePath: string, header: string[], data: any[][]) => {
-  const csvWriter = createObjectCsvWriter({
-    path: filePath,
-    header: header.map((columnName) => ({
-      id: columnName,
-      title: columnName,
-    })),
-  });
-
-  const records = data.map((record) => {
-    const recordObject: {
-      [key: string]: any;
-    } = {};
-    header.forEach((columnName, index) => {
-      recordObject[columnName] = record[index];
-    });
-    return recordObject;
-  });
-
-  csvWriter
-    .writeRecords(records)
-    .then(() => {
-      console.log(`CSV file "${filePath}" written successfully.`);
-    })
-    .catch((error) => {
-      console.error(`Error writing CSV file "${filePath}":`, error);
-    });
-};
 
 export const getProductsId = async (product: string) => {
   const browser = await puppeteer.connect({
@@ -49,10 +20,7 @@ export const getProductsId = async (product: string) => {
           ? `https://tiki.vn/search?q=${product}`
           : `https://tiki.vn/search?q=${product}&page=${pageNumber}`;
 
-      const response = await Promise.any([
-        page.waitForNavigation(),
-        page.goto(url),
-      ]);
+      await Promise.any([page.waitForNavigation(), page.goto(url)]);
 
       const productUrls = await page.$$eval(
         ".CatalogProducts__Wrapper-sc-1r8ct7c-0 > div",
@@ -101,70 +69,92 @@ export const GET = async (request: Request) => {
   const decodedProduct = decodeURIComponent(product!);
 
   const results = await getProductsId(decodedProduct);
+  // const results: any[] = [];
+  // const filePath = "data/tiki-sách-products-id.csv";
+
+  // // read csv file
+  // try {
+  //   await new Promise((resolve, reject) => {
+  //     fs.createReadStream(filePath)
+  //       .pipe(csvParser())
+  //       .on("data", (data) => results.push(data))
+  //       .on("end", () => {
+  //         resolve(results);
+  //       })
+  //       .on("error", (error) => {
+  //         reject(error);
+  //       });
+  //   });
+  // } catch (error) {
+  //   console.error("Error reading CSV file:", error);
+  //   throw new Error("Failed to fetch product details");
+  // }
 
   const productsDetail: any[] = [];
 
-  // for (let i = 0; i < results.length; i++) {
-  //   const result = results[i];
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
 
-  //   const [id, spid] = result;
+    const [id, spid] = result;
+    // const id = result["ID"];
+    // const spid = result["SPID"];
 
-  //   // delay to avoid being blocked by Tiki after 50 requests
-  //   if (i % 50 === 0) {
-  //     await new Promise((resolve) => setTimeout(resolve, 10000));
-  //   }
+    // delay to avoid being blocked by Tiki after 50 requests
+    if (i % 50 === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+    }
 
-  //   try {
-  //     const response = await fetch(
-  //       `https://tiki.vn/api/v2/products/${id}?platform=web&spid=${spid}&version=3`
-  //     );
-  //     const data = await response.json();
-  //     const {
-  //       sku,
-  //       name,
-  //       price,
-  //       short_description,
-  //       description,
-  //       categories: { name: category },
-  //       images,
-  //       stock_item: { qty },
-  //     } = data;
+    try {
+      const response = await fetch(
+        `https://tiki.vn/api/v2/products/${id}?spid=${spid}`
+      );
+      const data = await response.json();
+      const {
+        sku,
+        name,
+        price,
+        short_description,
+        description,
+        categories: { name: category },
+        images,
+        stock_item: { qty },
+      } = data;
 
-  //     const minifiedDesc = description.replace(/(\r\n|\n|\r)/gm, " ");
+      const minifiedDesc = description.replace(/(\r\n|\n|\r)/gm, " ");
 
-  //     const image_urls = images.map((image: any) => image.base_url).join(",");
-  //     productsDetail.push([
-  //       sku,
-  //       name,
-  //       short_description,
-  //       minifiedDesc,
-  //       price,
-  //       category,
-  //       image_urls,
-  //       qty,
-  //     ]);
-  //   } catch (error) {
-  //     console.error(`Error fetching product details for id ${id}:`, error);
-  //   }
-  // }
+      const image_urls = images.map((image: any) => image.base_url).join(",");
+      productsDetail.push([
+        sku,
+        name,
+        short_description,
+        minifiedDesc,
+        price,
+        category,
+        image_urls,
+        qty,
+      ]);
+    } catch (error) {
+      console.error(`Error fetching product details for id ${id}:`, error);
+    }
+  }
 
-  // writeCsv(
-  //   `data/tiki-${product}-products-detail.csv`,
-  //   [
-  //     "SKU",
-  //     "Name",
-  //     "Short_Description",
-  //     "Description",
-  //     "Price",
-  //     "Category",
-  //     "Image_URLs",
-  //     "Quantity",
-  //   ],
-  //   productsDetail
-  // );
+  writeCsv(
+    `data/tiki-${product}-products-detail.csv`,
+    [
+      "SKU",
+      "Name",
+      "Short_Description",
+      "Description",
+      "Price",
+      "Categories",
+      "Images",
+      "Quantity",
+    ],
+    productsDetail
+  );
 
   return NextResponse.json(
-    { message: "Success!", length: results.length },
+    { message: "Success!", length: productsDetail.length },
     {
       status: 200,
     }
