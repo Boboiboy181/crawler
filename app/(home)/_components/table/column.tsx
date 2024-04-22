@@ -1,48 +1,35 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@radix-ui/react-checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-} from "@radix-ui/react-dropdown-menu";
 import { ProductDetail } from "./table";
 
 export const columns: ColumnDef<ProductDetail>[] = [
   {
-    accessorKey: "sku",
+    accessorKey: "SKU",
     header: "SKU",
   },
   {
-    accessorKey: "name",
+    accessorKey: "Name",
     header: "Name",
   },
   {
-    accessorKey: "category",
+    accessorKey: "Category",
     header: "Category",
   },
   {
-    accessorKey: "qty",
+    accessorKey: "Quantity",
     header: () => <div className="text-center">Quantity</div>,
     cell: ({ row }) => {
-      const amount = parseInt(row.getValue("qty"));
+      const amount = parseInt(row.getValue("Quantity"));
 
       return <div className="text-center font-medium">{amount}</div>;
     },
   },
   {
-    accessorKey: "price",
+    accessorKey: "Price",
     header: () => <div className="text-center">Price</div>,
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("price"));
+      const amount = parseFloat(row.getValue("Price"));
 
       const formatted = new Intl.NumberFormat("vi-VN", {
         style: "currency",
@@ -53,43 +40,30 @@ export const columns: ColumnDef<ProductDetail>[] = [
     },
   },
   {
-    accessorKey: "short_description",
+    accessorKey: "Short_Description",
     header: "Short Description",
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
-  },
-  {
-    accessorKey: "image_urls",
-    header: "Images",
-  },
-  {
-    id: "actions",
-    header: "Actions",
-    enableHiding: false,
     cell: ({ row }) => {
-      const detail = row.original;
+      const shortDesc: string = row.getValue("Short_Description");
 
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(detail.sku)}
-            >
-              Copy SKU
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View product detail</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+      return <div className="max-w-[100px] truncate">{shortDesc}</div>;
+    },
+  },
+  {
+    accessorKey: "Description",
+    header: "Description",
+    cell: ({ row }) => {
+      const desc: string = row.getValue("Description");
+
+      return <div className="max-w-[100px] truncate">{desc}</div>;
+    },
+  },
+  {
+    accessorKey: "Images",
+    header: "Images",
+    cell: ({ row }) => {
+      const images: string = row.getValue("Images");
+
+      return <div className="max-w-[100px] truncate">{images}</div>;
     },
   },
 ];

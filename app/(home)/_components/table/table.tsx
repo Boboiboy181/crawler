@@ -2,7 +2,6 @@
 
 import {
   ColumnFiltersState,
-  SortingState,
   VisibilityState,
   flexRender,
   getCoreRowModel,
@@ -33,131 +32,23 @@ import {
 import { columns } from "./column";
 
 export type ProductDetail = {
-  sku: string;
-  name: string;
-  short_description: string;
-  description: string;
-  price: number;
-  category: string;
-  image_urls: string;
-  qty: number;
+  SKU: string;
+  Name: string;
+  Short_Description: string;
+  Description: string;
+  Price: number;
+  Categories: string;
+  Images: string;
+  Quantity: number;
 };
 
-const data: ProductDetail[] = [
-  // sample data
-  {
-    sku: "SKU123",
-    name: "Product 1",
-    short_description: "Short description",
-    description: "Description",
-    price: 100,
-    category: "Category 1",
-    image_urls: "https://example.com/image1.jpg",
-    qty: 10,
-  },
-  {
-    sku: "SKU456",
-    name: "Product 2",
-    short_description: "Short description",
-    description: "Description",
-    price: 200,
-    category: "Category 2",
-    image_urls: "https://example.com/image2.jpg",
-    qty: 20,
-  },
-  {
-    sku: "SKU789",
-    name: "Product 3",
-    short_description: "Short description",
-    description: "Description",
-    price: 300,
-    category: "Category 3",
-    image_urls: "https://example.com/image3.jpg",
-    qty: 30,
-  },
-  {
-    sku: "SKU123",
-    name: "Product 1",
-    short_description: "Short description",
-    description: "Description",
-    price: 100,
-    category: "Category 1",
-    image_urls: "https://example.com/image1.jpg",
-    qty: 10,
-  },
-  {
-    sku: "SKU456",
-    name: "Product 2",
-    short_description: "Short description",
-    description: "Description",
-    price: 200,
-    category: "Category 2",
-    image_urls: "https://example.com/image2.jpg",
-    qty: 20,
-  },
-  {
-    sku: "SKU789",
-    name: "Product 3",
-    short_description: "Short description",
-    description: "Description",
-    price: 300,
-    category: "Category 3",
-    image_urls: "https://example.com/image3.jpg",
-    qty: 30,
-  },
-  {
-    sku: "SKU123",
-    name: "Product 1",
-    short_description: "Short description",
-    description: "Description",
-    price: 100,
-    category: "Category 1",
-    image_urls: "https://example.com/image1.jpg",
-    qty: 10,
-  },
-  {
-    sku: "SKU123",
-    name: "Product 1",
-    short_description: "Short description",
-    description: "Description",
-    price: 100,
-    category: "Category 1",
-    image_urls: "https://example.com/image1.jpg",
-    qty: 10,
-  },
-  {
-    sku: "SKU123",
-    name: "Product 1",
-    short_description: "Short description",
-    description: "Description",
-    price: 100,
-    category: "Category 1",
-    image_urls: "https://example.com/image1.jpg",
-    qty: 10,
-  },
-  {
-    sku: "SKU123",
-    name: "Product 1",
-    short_description: "Short description",
-    description: "Description",
-    price: 100,
-    category: "Category 1",
-    image_urls: "https://example.com/image1.jpg",
-    qty: 10,
-  },
-  {
-    sku: "SKU123",
-    name: "Product 1",
-    short_description: "Short description",
-    description: "Description",
-    price: 100,
-    category: "Category 1",
-    image_urls: "https://example.com/image1.jpg",
-    qty: 10,
-  },
-];
-
-export function DataTable() {
+export function DataTable({
+  data,
+  loading,
+}: {
+  data: ProductDetail[];
+  loading: boolean;
+}) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -184,11 +75,11 @@ export function DataTable() {
       <div className="flex items-center py-4 justify-between">
         <Input
           placeholder="Filter name..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+          value={(table.getColumn("Name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
+            table.getColumn("Name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="max-w-xs"
         />
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -263,16 +154,25 @@ export function DataTable() {
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center font-semibold"
                 >
-                  No results.
+                  {loading
+                    ? "Loading..."
+                    : data.length === 0
+                    ? "No data available."
+                    : "No results found."}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+      <div className="flex items-center justify-between space-x-2 py-4">
+        <div>
+          <span className="font-semibold">
+             {data.length} results
+          </span>
+        </div>
         <div className="space-x-2">
           <Button
             variant="outline"

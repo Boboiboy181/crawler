@@ -1,6 +1,10 @@
 import { createObjectCsvWriter } from "csv-writer";
 
-export const writeCsv = (filePath: string, header: string[], data: any[][]) => {
+type Data = {
+  [key: string]: any;
+};
+
+export const writeCsv = (filePath: string, header: string[], data: Data[]) => {
   const csvWriter = createObjectCsvWriter({
     path: filePath,
     header: header.map((columnName) => ({
@@ -10,13 +14,11 @@ export const writeCsv = (filePath: string, header: string[], data: any[][]) => {
   });
 
   const records = data.map((record) => {
-    const recordObject: {
-      [key: string]: any;
-    } = {};
-    header.forEach((columnName, index) => {
-      recordObject[columnName] = record[index];
-    });
-    return recordObject;
+    const sanitizedRecord: Partial<Data> = {};
+    for (const columnName of header) {
+      sanitizedRecord[columnName] = record[columnName];
+    }
+    return sanitizedRecord;
   });
 
   csvWriter
