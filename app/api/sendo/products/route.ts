@@ -2,59 +2,51 @@ import { writeCsv } from "@/utils/write-csv";
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer-core";
 
-export const getProductsId = async (product: string) => {
+export const getProductNames = async (product: string) => {
   const browser = await puppeteer.connect({
     browserWSEndpoint: process.env.SBR_WS_ENDPOINT,
   });
 
-  const dataViewContent = [];
-  let pageNumber = 1;
+  const productUrls: string[] = [];
 
   try {
-    while (dataViewContent.length <= 600) {
+    while (productUrls.length <= 100) {
       const page = await browser.newPage();
       page.setDefaultNavigationTimeout(2 * 60 * 1000);
 
-      const url =
-        pageNumber === 1
-          ? `https://tiki.vn/search?q=${product}`
-          : `https://tiki.vn/search?q=${product}&page=${pageNumber}`;
+      const url = `https://www.sendo.vn/tim-kiem?q=${product}`;
 
       await Promise.any([page.waitForNavigation(), page.goto(url)]);
 
       const productUrls = await page.$$eval(
-        ".CatalogProducts__Wrapper-sc-1r8ct7c-0 > div",
+        ".d7ed-mPGbtR > div",
         (resultItems) => {
           return resultItems.map((resultItem) => {
-            const aTag = resultItem.querySelector("a")!;
-            const data_view_content = JSON.parse(
-              aTag.getAttribute("data-view-content")!,
-            )["click_data"];
-            return [data_view_content["id"], data_view_content["spid"]];
+            const url = resultItem.querySelector("a")!.href.split("/");
+            const lastSegment = url[url.length - 1];
+            return lastSegment.split(".")[0];
           });
-        },
+        }
       );
 
-      dataViewContent.push(...productUrls);
+      productUrls.push(...productUrls);
 
-      if (dataViewContent.length >= 200 && dataViewContent.length <= 600) {
+      if (productUrls.length >= 200 && productUrls.length <= 600) {
         console.log(
-          `Processed ${dataViewContent.length} products. Sleeping for 10 seconds...`,
+          `Processed ${productUrls.length} products. Sleeping for 10 seconds...`
         );
         await new Promise((resolve) => setTimeout(resolve, 10000));
       }
-
-      pageNumber++;
     }
   } catch (error) {
-    console.error(`Error during product ID extraction: ${error}`);
+    console.error(`Error during product Url extraction: ${error}`);
   } finally {
     if (browser) {
       await browser.close();
     }
   }
 
-  return dataViewContent;
+  return productUrls;
 };
 
 export const GET = async (request: Request) => {
@@ -62,39 +54,40 @@ export const GET = async (request: Request) => {
   const product = searchParams.get("product");
   const decodedProduct = decodeURIComponent(product!);
 
-  const results = await getProductsId(decodedProduct);
+  const results = await getProductNames(decodedProduct);
   const productsDetail: any[] = [];
 
   for (let i = 0; i < results.length; i++) {
-    const result = results[i];
-
-    const [id, spid] = result;
+    const slug = results[i];
 
     if (i % 50 === 0) {
       await new Promise((resolve) => setTimeout(resolve, 10000));
     }
 
     try {
-      const response = await fetch(
-        `https://tiki.vn/api/v2/products/${id}?spid=${spid}`,
-      );
+      const response = await fetch(`https://detail-api.sendo.vn/full/${slug}`);
       const data = await response.json();
       const {
-        sku,
+        sku_user,
         name,
         price,
         short_description,
-        description,
-        categories: { name: category },
-        images,
-        stock_item: { qty },
+        description_info: { description },
+        category_info,
+        media,
+        variants,
       } = data;
 
       const minifiedDesc = description.replace(/(\r\n|\n|\r)/gm, " ");
 
-      const image_urls = images.map((image: any) => image.base_url).join(",");
+      const image_urls = media.map((image: any) => image["image"]).join(",");
+      const category = category_info.join(",");
+      const qty = variants.reduce((acc: number, variant: any) => {
+        return acc + variant.stock;
+      }, 0);
+
       productsDetail.push({
-        SKU: sku,
+        SKU: sku_user,
         Name: name,
         Short_Description: short_description,
         Description: minifiedDesc,
@@ -104,12 +97,12 @@ export const GET = async (request: Request) => {
         Quantity: qty,
       });
     } catch (error) {
-      console.error(`Error fetching product details for id ${id}:`, error);
+      console.error(`Error fetching product details for ${slug}:`, error);
     }
   }
 
   writeCsv(
-    `data/tiki-${product?.trim()}-products-detail.csv`,
+    `data/sendo-${product?.trim()}-products-detail.csv`,
     [
       "SKU",
       "Name",
@@ -120,13 +113,13 @@ export const GET = async (request: Request) => {
       "Images",
       "Quantity",
     ],
-    productsDetail,
+    productsDetail
   );
 
   return NextResponse.json(
     { message: "Success!", productsDetail },
     {
       status: 200,
-    },
+    }
   );
 };

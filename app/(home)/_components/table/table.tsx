@@ -45,9 +45,13 @@ export type ProductDetail = {
 export function DataTable({
   data,
   loading,
+  product,
+  select,
 }: {
   data: ProductDetail[];
   loading: boolean;
+  product: string;
+  select: string;
 }) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -69,6 +73,23 @@ export function DataTable({
       columnVisibility,
     },
   });
+
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(
+        `/api/download?product=${product}&store=${select}`
+      );
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${product}-products-detail.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading CSV:", error);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -108,7 +129,10 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button>
+          <Button
+            disabled={data.length === 0 ? true : false}
+            onClick={handleDownload}
+          >
             <FileDown />
           </Button>
         </div>
@@ -169,9 +193,7 @@ export function DataTable({
       </div>
       <div className="flex items-center justify-between space-x-2 py-4">
         <div>
-          <span className="font-semibold">
-             {data.length} results
-          </span>
+          <span className="font-semibold">{data.length} results</span>
         </div>
         <div className="space-x-2">
           <Button
