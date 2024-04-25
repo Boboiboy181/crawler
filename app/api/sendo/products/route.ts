@@ -22,11 +22,15 @@ const getProductNames = async (product: string) => {
       window.scrollTo(0, document.body.scrollHeight);
     });
 
-    // ngay cho nay, Hiển sẽ tìm các lấy ra được thằng nút xem thêm rồi bấm cho tới khi đủ 600 sản phẩm
-    // lần đầu tiên sẽ hiển thị 120 sản phẩm, mỗi lần bấm hiển thị thêm 60 sản phẩm
-    // 600 - 120 = 480 % 60 = 8 lần bấm nút xem thêm
-
     await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    for (let i = 0; i < 8; i++) {
+      await page.click("button.d7ed-YaJkXL:nth-child(1)");
+      await page.evaluate(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
 
     const productNames = await page.$$eval(
       ".d7ed-NcrsFA > ._0337-BT20Ke > .d7ed-mPGbtR > div",
@@ -40,7 +44,7 @@ const getProductNames = async (product: string) => {
       }
     );
 
-    console.log(productNames);
+    console.log(productNames.length);
 
     productSlugs.push(...productNames);
   } catch (error) {
@@ -66,7 +70,7 @@ export const GET = async (request: Request) => {
     const slug = results[i];
 
     if (i % 50 === 0) {
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
     try {
