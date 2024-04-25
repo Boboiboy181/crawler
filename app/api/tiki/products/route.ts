@@ -2,14 +2,10 @@ import { writeCsv } from "@/utils/write-csv";
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 
-// brighdata xem co cho 10 dollars credit de dung thu
-// xem thu co cai alternative ve cai proxy network
-// ngan block browser cua puppeter
-// puppeter with proxy network
-
 export const getProductsId = async (product: string) => {
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: true,
+    args: ["--start-maximized, '--no-sandbox', '--disable-setuid-sandbox'"],
   });
   const dataViewContent = [];
   let pageNumber = 1;
@@ -17,7 +13,6 @@ export const getProductsId = async (product: string) => {
   try {
     while (dataViewContent.length <= 600) {
       const page = await browser.newPage();
-      page.setDefaultNavigationTimeout(2 * 60 * 1000);
 
       const url =
         pageNumber === 1
