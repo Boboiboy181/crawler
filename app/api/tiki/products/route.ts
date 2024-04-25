@@ -2,11 +2,8 @@ import { writeCsv } from "@/utils/write-csv";
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 
-const getProductsId = async (product: string) => {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--start-maximized, '--no-sandbox', '--disable-setuid-sandbox'"],
-  });
+export const getProductsId = async (product: string) => {
+  const browser = await puppeteer.launch()
   const dataViewContent = [];
   let pageNumber = 1;
 
@@ -20,6 +17,8 @@ const getProductsId = async (product: string) => {
           : `https://tiki.vn/search?q=${product}&page=${pageNumber}`;
 
       await Promise.any([page.waitForNavigation(), page.goto(url)]);
+
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       const productUrls = await page.$$eval(
         ".CatalogProducts__Wrapper-sc-1r8ct7c-0 > div",
