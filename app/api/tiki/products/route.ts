@@ -1,12 +1,16 @@
 import { writeCsv } from "@/utils/write-csv";
 import { NextResponse } from "next/server";
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer";
+
+// brighdata xem co cho 10 dollars credit de dung thu
+// xem thu co cai alternative ve cai proxy network
+// ngan block browser cua puppeter
+// puppeter with proxy network
 
 export const getProductsId = async (product: string) => {
-  const browser = await puppeteer.connect({
-    browserWSEndpoint: process.env.SBR_WS_ENDPOINT,
+  const browser = await puppeteer.launch({
+    headless: false,
   });
-
   const dataViewContent = [];
   let pageNumber = 1;
 
@@ -28,18 +32,18 @@ export const getProductsId = async (product: string) => {
           return resultItems.map((resultItem) => {
             const aTag = resultItem.querySelector("a")!;
             const data_view_content = JSON.parse(
-              aTag.getAttribute("data-view-content")!,
+              aTag.getAttribute("data-view-content")!
             )["click_data"];
             return [data_view_content["id"], data_view_content["spid"]];
           });
-        },
+        }
       );
 
       dataViewContent.push(...productUrls);
 
       if (dataViewContent.length >= 200 && dataViewContent.length <= 600) {
         console.log(
-          `Processed ${dataViewContent.length} products. Sleeping for 10 seconds...`,
+          `Processed ${dataViewContent.length} products. Sleeping for 10 seconds...`
         );
         await new Promise((resolve) => setTimeout(resolve, 10000));
       }
@@ -76,7 +80,7 @@ export const GET = async (request: Request) => {
 
     try {
       const response = await fetch(
-        `https://tiki.vn/api/v2/products/${id}?spid=${spid}`,
+        `https://tiki.vn/api/v2/products/${id}?spid=${spid}`
       );
       const data = await response.json();
       const {
@@ -120,13 +124,13 @@ export const GET = async (request: Request) => {
       "Images",
       "Quantity",
     ],
-    productsDetail,
+    productsDetail
   );
 
   return NextResponse.json(
     { message: "Success!", productsDetail },
     {
       status: 200,
-    },
+    }
   );
 };
