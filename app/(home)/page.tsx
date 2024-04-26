@@ -19,17 +19,19 @@ export default function Home() {
 
   const [data, setData] = useState<ProductDetail[]>([]);
   const [loading, setLoading] = useState(false);
-  const [select, setSelect] = useState("tiki");
+  const [select, setSelect] = useState<string>("");
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!inputRef.current?.value) return;
+    if (!inputRef.current?.value) alert("Please enter product name");
 
     const product = inputRef.current?.value;
     try {
       setLoading(true);
       setData([]);
-      const response = await fetch(`/api/${select}/products?product=${product}`);
+      const response = await fetch(
+        `/api/${select}/products?product=${product}`
+      );
       const data = await response.json();
       const { productsDetail } = data;
       setData(productsDetail);
@@ -43,6 +45,16 @@ export default function Home() {
 
   const onSelectChange = (value: string) => {
     setSelect(value);
+  };
+
+  const isDisable = () => {
+    if (loading) {
+      return true;
+    } else if (!select) {
+      return true;
+    } else {
+      return false;
+    }
   };
 
   return (
@@ -72,7 +84,7 @@ export default function Home() {
               </SelectContent>
             </Select>
           </div>
-          <Button disabled={loading} type="submit">
+          <Button disabled={isDisable()} type="submit">
             <Search />
           </Button>
         </form>

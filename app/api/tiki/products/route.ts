@@ -2,7 +2,7 @@ import { writeCsv } from "@/utils/write-csv";
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 
-export const getProductsId = async (product: string) => {
+const getProductsId = async (product: string) => {
   const browser = await puppeteer.launch()
   const dataViewContent = [];
   let pageNumber = 1;
