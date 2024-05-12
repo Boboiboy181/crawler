@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import { data } from "./data";
+import { writeCsv } from "@/utils/write-csv";
 
 const getUrls = async () => {
   const browser = await puppeteer.launch();
@@ -45,8 +46,10 @@ const getUrls = async () => {
 };
 
 // export const GET = async () => {
+//   // return NextResponse.json(data.length);
+
 //   const browser = await puppeteer.launch();
-//   const urls = await getUrls();
+//   const urls = slugs;
 
 //   const productsDetail: any[] = [];
 
@@ -59,7 +62,7 @@ const getUrls = async () => {
 //   await new Promise((resolve) => setTimeout(resolve, 4000));
 
 //   try {
-//     for (let i = 0; i < urls.length; i++) {
+//     for (let i = 500; i < 580; i++) {
 //       const url = urls[i];
 
 //       await Promise.any([
@@ -127,6 +130,83 @@ const getUrls = async () => {
 //   return NextResponse.json(productsDetail);
 // };
 
+// export const GET = () => {
+//   return NextResponse.json(data.length);
+// };
+
 export const GET = () => {
-  return NextResponse.json(data.length);
+  const productsDetail = data;
+
+  const maxAttributes = Math.max(
+    ...data.map((product) => product.specs.length)
+  );
+
+  const csvHeaders = [
+    "Name",
+    "Description",
+    "Categories",
+    "SKU",
+    "Images",
+    "Regular Price",
+    "Sale Price",
+  ];
+
+  for (let i = 1; i <= maxAttributes; i++) {
+    csvHeaders.push(`Attribute ${i} name`);
+    csvHeaders.push(`Attribute ${i} value(s)`);
+    csvHeaders.push(`Attribute ${i} visible`);
+    csvHeaders.push(`Attribute ${i} global`);
+  }
+
+  const flattenedProducts = data.flatMap((product) => {
+    const attributes = product.specs.slice(0, maxAttributes);
+    const attributesData = [];
+
+    for (let i = 0; i < product.specs.length; i++) {
+      const attribute = attributes[i];
+      attributesData.push({
+        [`Attribute ${i + 1} name`]: attribute
+          ? attribute.key.replace(":", "")
+          : "",
+        [`Attribute ${i + 1} value(s)`]: attribute ? attribute.value : "",
+        [`Attribute ${i + 1} visible`]: attribute ? 1 : "",
+        [`Attribute ${i + 1} global`]: attribute ? 1 : "",
+      });
+    }
+
+    const sample = {
+      Name: product.title,
+      Description: product.description
+        .replace("ShopVNB", "<a href='/'>BetterBadminton</a>")
+        .replace("ShopVNB.", "BetterBadminton")
+        .replace("Shop VNB", "BetterBadminton")
+        .replace("VNB", "BetterBadminton")
+        .replace(/style="font-family:arial,helvetica,sans-serif"/g, "")
+        .replace(
+          "https://shopvnb.com/giay-cau-long.html",
+          "https://g5-badminton.uit.io.vn/product-category/giay-cau-long"
+        )
+        .replace(/\.html/g, "")
+        .replace(
+          /https:\/\/shopvnb\.com\//g,
+          "https://g5-badminton.uit.io.vn/product-category/giay-cau-long/"
+        ),
+      SKU: product.sku.replace("VNB", "BB"),
+      Images: product.images.join(", "),
+      Categories:
+        "Giày cầu lông " + product.brand.replace(/\n/g, "").replace(/\t/g, ""),
+      "Sale Price": product.price.replace("₫", "").replace(/\./g, "").trim(),
+      "Regular Price": product.old_price
+        .replace("₫", "")
+        .replace(/\./g, "")
+        .trim(),
+      ...Object.assign({}, ...attributesData),
+    };
+
+    return sample;
+  });
+
+  writeCsv("data/vnb/badminton-shoes.csv", csvHeaders, flattenedProducts);
+
+  return NextResponse.json(flattenedProducts);
 };

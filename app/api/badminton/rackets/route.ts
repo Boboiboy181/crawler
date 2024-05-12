@@ -1,5 +1,4 @@
 import { writeCsv } from "@/utils/write-csv";
-import { translate } from "@vitalets/google-translate-api";
 import { NextResponse } from "next/server";
 import { data } from "./proccessed-rackets";
 import { rawProducts } from "./rackets";
@@ -76,20 +75,6 @@ const products = rawProducts.map((item) => {
 //   return NextResponse.json(productsDetail);
 // };
 
-async function translateData(data: any) {
-  const translated: {
-    [key: string]: any;
-  } = {};
-  for (const key in data) {
-    if (typeof data[key] === "object" && data[key] !== null) {
-      translated[key] = await translateData(data[key]); // Recursively translate nested objects
-    } else {
-      translated[key] = await translate(data[key], { to: "vi" }); // Translate text to Vietnamese
-    }
-  }
-  return translated;
-}
-
 export const GET = async () => {
   const maxAttributes = Math.max(
     ...data.map((product) => product.specs.length)
@@ -113,7 +98,7 @@ export const GET = async () => {
   }
 
   const flattenedProducts = data.flatMap((product) => {
-    const attributes = product.specs.slice(0, maxAttributes); 
+    const attributes = product.specs.slice(0, maxAttributes);
     const attributesData = [];
 
     for (let i = 0; i < maxAttributes; i++) {
@@ -137,15 +122,7 @@ export const GET = async () => {
       ...Object.assign({}, ...attributesData),
     };
 
-    const translated = translateData(sample)
-      .then((translatedData) => {
-        console.log(translatedData);
-      })
-      .catch((error) => {
-        console.error("Translation error:", error);
-      });
-
-    return translated;
+    return sample;
   });
 
   writeCsv("data/badminton-rackets_vi.csv", csvHeaders, flattenedProducts);
